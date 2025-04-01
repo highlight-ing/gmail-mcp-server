@@ -1,4 +1,4 @@
-# Google Gmail MCP Server
+# Gmail MCP Server
 
 A Model Context Protocol (MCP) server that provides tools for interacting with Gmail API. This server enables you to manage your emails programmatically through the MCP interface.
 

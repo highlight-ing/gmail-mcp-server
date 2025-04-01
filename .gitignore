@@ -1,5 +1,31 @@
-node_modules/
-build/
-*.log
-.env*
+# Build output
+/build/
+
+# Dependency directories
+/node_modules/
+
+# Environment variables and secrets
+.env
+.env.local
+credentials.json
 token.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

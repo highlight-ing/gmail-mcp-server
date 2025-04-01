@@ -21,7 +21,7 @@ class GoogleGmailServer {
   constructor() {
     this.server = new Server(
       {
-        name: 'gmail-server',
+        name: 'google-gmail-server',
         version: '0.1.0',
       },
       {

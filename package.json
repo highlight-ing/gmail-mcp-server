@@ -1,11 +1,11 @@
 {
-  "name": "gmail-server",
+  "name": "google-gmail-server",
   "version": "0.1.0",
   "description": "A Model Context Protocol server for Gmail",
   "private": true,
   "type": "module",
   "bin": {
-    "gmail-server": "./build/index.js"
+    "google-gmail-server": "./build/index.js"
   },
   "files": [
     "build"

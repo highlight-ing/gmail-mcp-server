@@ -3,45 +3,27 @@
  * This file exports WebAssembly compatible functions that serve as entry points
  * for interacting with the Gmail API through the Extism runtime.
  */
-import {
-  handleListEmails,
-  handleSearchEmails,
-  handleSendEmail,
-  handleModifyEmail,
-} from "./handlers/email";
+import * as main from "./main";
 
-/**
- * Lists emails from the user's Gmail account.
- * Takes JSON input containing accessToken, maxResults (optional), and query (optional).
- * @returns 0 on success, 1 on error
- */
-export function list_emails(): number {
-  return handleListEmails();
+import { CallToolRequest, CallToolResult, ListToolsResult } from "./pdk";
+
+export function call(): number {
+  const untypedInput = JSON.parse(Host.inputString());
+  const input = CallToolRequest.fromJson(untypedInput);
+
+  const output = main.callImpl(input);
+
+  const untypedOutput = CallToolResult.toJson(output);
+  Host.outputString(JSON.stringify(untypedOutput));
+
+  return 0;
 }
 
-/**
- * Searches emails in the user's Gmail account based on a query.
- * Takes JSON input containing accessToken, maxResults (optional), and query.
- * @returns 0 on success, 1 on error
- */
-export function search_emails(): number {
-  return handleSearchEmails();
-}
+export function describe(): number {
+  const output = main.describeImpl();
 
-/**
- * Sends an email from the user's Gmail account.
- * Takes JSON input containing accessToken, to, subject, body, cc (optional), and bcc (optional).
- * @returns 0 on success, 1 on error
- */
-export function send_email(): number {
-  return handleSendEmail();
-}
+  const untypedOutput = ListToolsResult.toJson(output);
+  Host.outputString(JSON.stringify(untypedOutput));
 
-/**
- * Modifies an email by adding or removing labels.
- * Takes JSON input containing accessToken, id, addLabels (optional), and removeLabels (optional).
- * @returns 0 on success, 1 on error
- */
-export function modify_email(): number {
-  return handleModifyEmail();
+  return 0;
 }

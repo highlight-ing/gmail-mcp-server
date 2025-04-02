@@ -1,0 +1,17 @@
+{
+    "name": "gmail-extism-plugin",
+    "version": "0.1.0",
+    "description": "A Gmail plugin implemented as an Extism plugin using a bundler",
+    "main": "dist/index.js",
+    "scripts": {
+      "build": "node esbuild.js && extism-js dist/index.js -i src/index.d.ts -o dist/plugin.wasm"
+    },
+    "dependencies": {
+      "@extism/js-pdk": "^1.1.1"
+    },
+    "devDependencies": {
+      "esbuild": "^0.17.0"
+    },
+    "license": "MIT"
+  }
+  

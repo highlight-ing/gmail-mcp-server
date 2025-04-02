@@ -20,12 +20,85 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/index.ts
 var src_exports = {};
 __export(src_exports, {
-  list_emails: () => list_emails,
-  modify_email: () => modify_email,
-  search_emails: () => search_emails,
-  send_email: () => send_email
+  call: () => call,
+  describe: () => describe
 });
 module.exports = __toCommonJS(src_exports);
+
+// src/pdk.ts
+var CallToolRequest = class {
+  constructor(toolId, arguments_) {
+    this.toolId = toolId;
+    this.arguments = arguments_;
+  }
+  static fromJson(json) {
+    return new CallToolRequest(json.toolId, json.arguments || {});
+  }
+  static toJson(request) {
+    return {
+      toolId: request.toolId,
+      arguments: request.arguments
+    };
+  }
+};
+var CallToolResult = class {
+  constructor(state, result, error) {
+    this.state = state;
+    this.result = result;
+    this.error = error;
+  }
+  static fromJson(json) {
+    return new CallToolResult(json.state, json.result, json.error);
+  }
+  static toJson(result) {
+    const json = {
+      state: result.state,
+      result: result.result
+    };
+    if (result.error) {
+      json.error = result.error;
+    }
+    return json;
+  }
+};
+var Tool = class {
+  constructor(id, label, description, parameters) {
+    this.id = id;
+    this.label = label;
+    this.description = description;
+    this.parameters = parameters;
+  }
+  static fromJson(json) {
+    return new Tool(
+      json.id,
+      json.label,
+      json.description,
+      json.parameters || {}
+    );
+  }
+  static toJson(tool) {
+    return {
+      id: tool.id,
+      label: tool.label,
+      description: tool.description,
+      parameters: tool.parameters
+    };
+  }
+};
+var ListToolsResult = class {
+  constructor(tools) {
+    this.tools = tools;
+  }
+  static fromJson(json) {
+    const tools = (json.tools || []).map((t) => Tool.fromJson(t));
+    return new ListToolsResult(tools);
+  }
+  static toJson(result) {
+    return {
+      tools: result.tools.map((t) => Tool.toJson(t))
+    };
+  }
+};
 
 // src/handlers/email.ts
 function getArgs() {
@@ -244,17 +317,112 @@ function handleModifyEmail() {
   return 0;
 }
 
+// src/main.ts
+function callImpl(request) {
+  try {
+    switch (request.toolId) {
+      case "list_emails":
+        Host.inputString = () => JSON.stringify(request.arguments);
+        const listResult = handleListEmails();
+        if (listResult === 0) {
+          return new CallToolResult("success", JSON.parse(Host.outputString()), void 0);
+        } else {
+          return new CallToolResult("error", null, "Failed to list emails");
+        }
+      case "search_emails":
+        Host.inputString = () => JSON.stringify(request.arguments);
+        const searchResult = handleSearchEmails();
+        if (searchResult === 0) {
+          return new CallToolResult("success", JSON.parse(Host.outputString()), void 0);
+        } else {
+          return new CallToolResult("error", null, "Failed to search emails");
+        }
+      case "send_email":
+        Host.inputString = () => JSON.stringify(request.arguments);
+        const sendResult = handleSendEmail();
+        if (sendResult === 0) {
+          return new CallToolResult("success", JSON.parse(Host.outputString()), void 0);
+        } else {
+          return new CallToolResult("error", null, "Failed to send email");
+        }
+      case "modify_email":
+        Host.inputString = () => JSON.stringify(request.arguments);
+        const modifyResult = handleModifyEmail();
+        if (modifyResult === 0) {
+          return new CallToolResult("success", JSON.parse(Host.outputString()), void 0);
+        } else {
+          return new CallToolResult("error", null, "Failed to modify email");
+        }
+      default:
+        return new CallToolResult("error", null, `Unknown tool: ${request.toolId}`);
+    }
+  } catch (err) {
+    return new CallToolResult("error", null, `Error: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+function describeImpl() {
+  const tools = [
+    new Tool(
+      "list_emails",
+      "List Emails",
+      "Lists emails from the user's Gmail account",
+      {
+        accessToken: { type: "string", description: "OAuth2 access token" },
+        maxResults: { type: "number", description: "Maximum number of emails to return", optional: true },
+        query: { type: "string", description: "Query to filter emails", optional: true }
+      }
+    ),
+    new Tool(
+      "search_emails",
+      "Search Emails",
+      "Searches emails in the user's Gmail account based on a query",
+      {
+        accessToken: { type: "string", description: "OAuth2 access token" },
+        maxResults: { type: "number", description: "Maximum number of emails to return", optional: true },
+        query: { type: "string", description: "Query to filter emails" }
+      }
+    ),
+    new Tool(
+      "send_email",
+      "Send Email",
+      "Sends an email from the user's Gmail account",
+      {
+        accessToken: { type: "string", description: "OAuth2 access token" },
+        to: { type: "string", description: "Email recipient" },
+        subject: { type: "string", description: "Email subject" },
+        body: { type: "string", description: "Email body (HTML)" },
+        cc: { type: "string", description: "Carbon copy recipients", optional: true },
+        bcc: { type: "string", description: "Blind carbon copy recipients", optional: true }
+      }
+    ),
+    new Tool(
+      "modify_email",
+      "Modify Email",
+      "Modifies an email by adding or removing labels",
+      {
+        accessToken: { type: "string", description: "OAuth2 access token" },
+        id: { type: "string", description: "Email ID" },
+        addLabels: { type: "array", description: "Labels to add", optional: true },
+        removeLabels: { type: "array", description: "Labels to remove", optional: true }
+      }
+    )
+  ];
+  return new ListToolsResult(tools);
+}
+
 // src/index.ts
-function list_emails() {
-  return handleListEmails();
+function call() {
+  const untypedInput = JSON.parse(Host.inputString());
+  const input = CallToolRequest.fromJson(untypedInput);
+  const output = callImpl(input);
+  const untypedOutput = CallToolResult.toJson(output);
+  Host.outputString(JSON.stringify(untypedOutput));
+  return 0;
 }
-function search_emails() {
-  return handleSearchEmails();
-}
-function send_email() {
-  return handleSendEmail();
-}
-function modify_email() {
-  return handleModifyEmail();
+function describe() {
+  const output = describeImpl();
+  const untypedOutput = ListToolsResult.toJson(output);
+  Host.outputString(JSON.stringify(untypedOutput));
+  return 0;
 }
 //# sourceMappingURL=index.js.map

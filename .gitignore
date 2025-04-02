@@ -3,6 +3,7 @@
 
 # Dependency directories
 /node_modules/
+/extism-plugin/node_modules/
 
 # Environment variables and secrets
 .env

@@ -102,9 +102,10 @@ var ListToolsResult = class {
 
 // src/handlers/email.ts
 function getArgs() {
-  const input = Host.inputString();
   try {
-    return JSON.parse(input);
+    const input = Host.inputString();
+    const args = JSON.parse(input);
+    return args;
   } catch (err) {
     Host.outputString(JSON.stringify({ error: "Invalid JSON input" }));
     return null;
@@ -320,44 +321,68 @@ function handleModifyEmail() {
 // src/main.ts
 function callImpl(request) {
   try {
+    const originalInputString = Host.inputString;
+    let outputContent = "";
+    Host.inputString = () => JSON.stringify(request.arguments);
+    const originalOutputString = Host.outputString;
+    Host.outputString = (content) => {
+      outputContent = content;
+      return content;
+    };
+    let result = 1;
     switch (request.toolId) {
       case "list_emails":
-        Host.inputString = () => JSON.stringify(request.arguments);
-        const listResult = handleListEmails();
-        if (listResult === 0) {
-          return new CallToolResult("success", JSON.parse(Host.outputString()), void 0);
-        } else {
-          return new CallToolResult("error", null, "Failed to list emails");
-        }
+        result = handleListEmails();
+        break;
       case "search_emails":
-        Host.inputString = () => JSON.stringify(request.arguments);
-        const searchResult = handleSearchEmails();
-        if (searchResult === 0) {
-          return new CallToolResult("success", JSON.parse(Host.outputString()), void 0);
-        } else {
-          return new CallToolResult("error", null, "Failed to search emails");
-        }
+        result = handleSearchEmails();
+        break;
       case "send_email":
-        Host.inputString = () => JSON.stringify(request.arguments);
-        const sendResult = handleSendEmail();
-        if (sendResult === 0) {
-          return new CallToolResult("success", JSON.parse(Host.outputString()), void 0);
-        } else {
-          return new CallToolResult("error", null, "Failed to send email");
-        }
+        result = handleSendEmail();
+        break;
       case "modify_email":
-        Host.inputString = () => JSON.stringify(request.arguments);
-        const modifyResult = handleModifyEmail();
-        if (modifyResult === 0) {
-          return new CallToolResult("success", JSON.parse(Host.outputString()), void 0);
-        } else {
-          return new CallToolResult("error", null, "Failed to modify email");
-        }
+        result = handleModifyEmail();
+        break;
       default:
-        return new CallToolResult("error", null, `Unknown tool: ${request.toolId}`);
+        Host.inputString = originalInputString;
+        Host.outputString = originalOutputString;
+        return new CallToolResult(
+          "error",
+          null,
+          `Unknown tool: ${request.toolId}`
+        );
+    }
+    Host.inputString = originalInputString;
+    Host.outputString = originalOutputString;
+    if (result === 0) {
+      try {
+        const parsedOutput = JSON.parse(outputContent);
+        return new CallToolResult("success", parsedOutput, void 0);
+      } catch (err) {
+        return new CallToolResult(
+          "success",
+          { message: outputContent },
+          void 0
+        );
+      }
+    } else {
+      try {
+        const parsedError = JSON.parse(outputContent);
+        return new CallToolResult(
+          "error",
+          null,
+          parsedError.error || "Unknown error"
+        );
+      } catch (err) {
+        return new CallToolResult("error", null, outputContent || "Unknown error");
+      }
     }
   } catch (err) {
-    return new CallToolResult("error", null, `Error: ${err instanceof Error ? err.message : String(err)}`);
+    return new CallToolResult(
+      "error",
+      null,
+      `Error: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 }
 function describeImpl() {

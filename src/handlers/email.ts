@@ -253,4 +253,71 @@ export async function handleModifyEmail(args: any) {
       isError: true,
     };
   }
+}
+
+export async function handleCreateDraft(args: any) {
+  try {
+    const { accessToken, to, subject, body, cc, bcc } = args;
+
+    // Create email content
+    const message = [
+      'Content-Type: text/html; charset=utf-8',
+      'MIME-Version: 1.0',
+      `To: ${to}`,
+      cc ? `Cc: ${cc}` : '',
+      bcc ? `Bcc: ${bcc}` : '',
+      `Subject: ${subject}`,
+      '',
+      body,
+    ].filter(Boolean).join('\r\n');
+
+    // Encode the email
+    const encodedMessage = Buffer.from(message)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    // Create the draft
+    const response = await fetch(
+      'https://gmail.googleapis.com/gmail/v1/users/me/drafts',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: {
+            raw: encodedMessage,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to create draft: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Draft created successfully. Draft ID: ${data.id}`,
+        },
+      ],
+    };
+  } catch (error: any) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Error creating draft: ${error.message}`,
+        },
+      ],
+      isError: true,
+    };
+  }
 } 

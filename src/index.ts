@@ -12,7 +12,8 @@ import {
   handleListEmails,
   handleSearchEmails,
   handleSendEmail,
-  handleModifyEmail
+  handleModifyEmail,
+  handleCreateDraft
 } from './handlers/email.js';
 
 class GoogleGmailServer {
@@ -150,6 +151,40 @@ class GoogleGmailServer {
             required: ['accessToken', 'id']
           },
         },
+        {
+          name: 'create_draft',
+          description: 'Create a draft email in Gmail',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              accessToken: {
+                type: 'string',
+                description: 'Google API access token',
+              },
+              to: {
+                type: 'string',
+                description: 'Recipient email address',
+              },
+              subject: {
+                type: 'string',
+                description: 'Email subject',
+              },
+              body: {
+                type: 'string',
+                description: 'Email body (can include HTML)',
+              },
+              cc: {
+                type: 'string',
+                description: 'CC recipients (comma-separated)',
+              },
+              bcc: {
+                type: 'string',
+                description: 'BCC recipients (comma-separated)',
+              },
+            },
+            required: ['accessToken', 'to', 'subject', 'body']
+          },
+        },
       ],
     }));
 
@@ -163,6 +198,8 @@ class GoogleGmailServer {
           return await handleSendEmail(request.params.arguments);
         case 'modify_email':
           return await handleModifyEmail(request.params.arguments);
+        case 'create_draft':
+          return await handleCreateDraft(request.params.arguments);
         default:
           throw new McpError(
             ErrorCode.MethodNotFound,

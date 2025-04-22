@@ -13,7 +13,8 @@ import {
   handleListEmails,
   handleSearchEmails,
   handleSendEmail,
-  handleModifyEmail
+  handleModifyEmail,
+  handleCreateDraft
 } from "./handlers/email";
 
 /**
@@ -53,6 +54,10 @@ export function callImpl(request: CallToolRequest): CallToolResult {
         
       case "modify_email":
         result = handleModifyEmail();
+        break;
+
+      case "create_draft":
+        result = handleCreateDraft();
         break;
         
       default:
@@ -230,7 +235,44 @@ export function describeImpl(): ListToolsResult {
           "required": ["accessToken", "id"]
         }
       }
-    }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_draft",
+        "description": "Creates a draft email in the user's Gmail account",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "accessToken": {
+              "type": "string",
+              "description": "OAuth2 access token"
+            },
+            "to": {
+              "type": "string",
+              "description": "Email recipient"
+            },
+            "subject": {
+              "type": "string",
+              "description": "Email subject"
+            },
+            "body": {
+              "type": "string",
+              "description": "Email body (HTML)"
+            },
+            "cc": {
+              "type": "string",
+              "description": "Carbon copy recipients"
+            },
+            "bcc": {
+              "type": "string",
+              "description": "Blind carbon copy recipients"
+            }
+          },
+          "required": ["accessToken", "to", "subject", "body"]
+        }
+      }
+    },
   ];
   
   return new ListToolsResult(tools);

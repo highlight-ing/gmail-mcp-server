@@ -301,11 +301,13 @@ export async function handleCreateDraft(args: any) {
 
     const data = await response.json();
 
+    const draftLink = `https://mail.google.com/mail/u/0/#drafts`;
+
     return {
       content: [
         {
           type: 'text',
-          text: `Draft created successfully. Draft ID: ${data.id}`,
+          text: `Draft created successfully. Draft ID: ${data.id}\nYou can find your draft in the drafts folder: ${draftLink}`,
         },
       ],
     };

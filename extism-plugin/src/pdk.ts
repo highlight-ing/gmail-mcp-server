@@ -96,20 +96,19 @@ export class Tool {
  * Result of listing available tools
  */
 export class ListToolsResult {
-  tools: Tool[];
+  tools: any[];
   
-  constructor(tools: Tool[]) {
+  constructor(tools: any[]) {
     this.tools = tools;
   }
   
   static fromJson(json: any): ListToolsResult {
-    const tools = (json.tools || []).map((t: any) => Tool.fromJson(t));
-    return new ListToolsResult(tools);
+    return new ListToolsResult(json.tools || []);
   }
   
   static toJson(result: ListToolsResult): any {
     return {
-      tools: result.tools.map(t => Tool.toJson(t))
+      tools: result.tools
     };
   }
 } 

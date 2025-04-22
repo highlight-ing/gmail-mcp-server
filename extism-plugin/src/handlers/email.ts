@@ -280,4 +280,58 @@ export function handleModifyEmail(): number {
   Host.outputString(JSON.stringify({ message: "Email modified successfully", id: data.id }));
   return 0;
 }
-  
+
+/**
+ * Handles creating a draft email through the Gmail API.
+ * Constructs a properly formatted email (including MIME parts) and creates a draft.
+ * 
+ * @returns 0 on success, 1 on error
+ */
+export function handleCreateDraft(): number {
+  const args = getArgs();
+  if (!args) return 1;
+
+  const { accessToken, to, subject, body, cc, bcc } = args;
+
+  const messageParts = [
+    "Content-Type: text/html; charset=utf-8",
+    "MIME-Version: 1.0",
+    `To: ${to}`,
+    cc ? `Cc: ${cc}` : "",
+    bcc ? `Bcc: ${bcc}` : "",
+    `Subject: ${subject}`,
+    "",
+    body
+  ].filter(Boolean);
+  const message = messageParts.join("\r\n");
+
+  let encodedMessage = Buffer.from(message).toString("base64");
+  encodedMessage = encodedMessage.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+  const draftUrl = "https://gmail.googleapis.com/gmail/v1/users/me/drafts";
+  const response = Http.request({
+    url: draftUrl,
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ message: { raw: encodedMessage } })
+  });
+
+  if (response.status !== 200) {
+    Host.outputString(JSON.stringify({ error: `Failed to create draft: ${response.body}` }));
+    return 1;
+  }
+
+  let data;
+  try {
+    data = JSON.parse(response.body);
+  } catch (err) {
+    Host.outputString(JSON.stringify({ error: "Invalid response from Gmail" }));
+    return 1;
+  }
+
+  Host.outputString(JSON.stringify({ message: "Draft created successfully", id: data.id }));
+  return 0;
+}
